@@ -47,6 +47,9 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		void AdjustSensitivity(float factor);
 		void AdjustDeadzone(float delta);
 		void AdjustCurve(float delta);
+		void AdjustSmoothing(float factor);
+		// holds the stick at exactly the deadzone value so it can be matched to the game's
+		void SetCalibrating(bool calibrating);
 
 		bool nativeEventFilter(const QByteArray &event_type, void *message, qintptr *result) override;
 
@@ -71,7 +74,8 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		float sensitivity;
 		float curve;
 		float deadzone;
-		float smoothing;
+		float min_cutoff;
+		bool calibrating = false;
 
 		// accumulated raw counts since last tick
 		double accum_x = 0.0;
@@ -84,10 +88,9 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		int window_pos = 0;
 		double smooth_vx = 0.0;
 		double smooth_vy = 0.0;
-		// last deflection, held briefly after movement stops so the game samples short flicks
-		double last_out_x = 0.0;
-		double last_out_y = 0.0;
-		double hold_remaining = 0.0;
+		double smooth_dspeed = 0.0;
+		// time since the last mouse counts arrived
+		double idle_time = 0.0;
 
 		ChiakiControllerState state;
 		QTimer *tick_timer;

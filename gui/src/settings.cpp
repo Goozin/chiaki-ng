@@ -1032,13 +1032,13 @@ void Settings::SetMouseLookDeadzone(float deadzone)
 	settings.setValue("mouselook/deadzone", deadzone);
 }
 
-float Settings::GetMouseLookSmoothing() const
+float Settings::GetMouseLookMinCutoff() const
 {
-	return settings.value("mouselook/smoothing", 0.1f).toFloat();
+	return settings.value("mouselook/min_cutoff", 2.5f).toFloat();
 }
-void Settings::SetMouseLookSmoothing(float smoothing)
+void Settings::SetMouseLookMinCutoff(float min_cutoff)
 {
-	settings.setValue("mouselook/smoothing", smoothing);
+	settings.setValue("mouselook/min_cutoff", min_cutoff);
 }
 
 

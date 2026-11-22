@@ -29,8 +29,13 @@ Q_LOGGING_CATEGORY(chiakiMouseLook, "chiaki.mouselook", QtInfoMsg);
 #define MOUSELOOK_FULL_SCALE 2500.0
 #define MOUSELOOK_WHEEL_PRESS_MS 60
 #define MOUSELOOK_CLIP_REFRESH_MS 500
-// roughly one game frame at 60 fps
-#define MOUSELOOK_HOLD_S 0.016
+// treat the mouse as stopped after this long without counts; bridges gaps between reports
+// during slow aiming and keeps short flicks on screen for about a game frame
+#define MOUSELOOK_STOP_S 0.024
+// One Euro filter tuning (speed normalized to full scale)
+#define MOUSELOOK_FILTER_BETA 1.0
+#define MOUSELOOK_FILTER_DCUTOFF 8.0
+#define MOUSELOOK_PI 3.14159265358979323846
 
 MouseLook::MouseLook(Settings *settings, QWindow *window, QObject *parent)
 	: QObject(parent),
@@ -40,7 +45,7 @@ MouseLook::MouseLook(Settings *settings, QWindow *window, QObject *parent)
 	sensitivity = settings->GetMouseLookSensitivity();
 	curve = settings->GetMouseLookCurve();
 	deadzone = settings->GetMouseLookDeadzone();
-	smoothing = settings->GetMouseLookSmoothing();
+	min_cutoff = settings->GetMouseLookMinCutoff();
 	chiaki_controller_state_set_idle(&state);
 
 	tick_timer = new QTimer(this);
@@ -124,8 +129,8 @@ void MouseLook::UpdateCapture()
 	std::fill(std::begin(window_dy), std::end(window_dy), 0.0);
 	std::fill(std::begin(window_dt), std::end(window_dt), 0.0);
 	smooth_vx = smooth_vy = 0.0;
-	last_out_x = last_out_y = 0.0;
-	hold_remaining = 0.0;
+	smooth_dspeed = 0.0;
+	idle_time = 0.0;
 	chiaki_controller_state_set_idle(&state);
 	wheel_buttons = 0;
 	wheel_release_timer->stop();
@@ -319,12 +324,27 @@ void MouseLook::Tick()
 	}
 	double vx = sum_dx / sum_dt;
 	double vy = sum_dy / sum_dt;
-	smooth_vx = smooth_vx * smoothing + vx * (1.0 - smoothing);
-	smooth_vy = smooth_vy * smoothing + vy * (1.0 - smoothing);
+
+	// One Euro filter: smooth hard at low speed (steady fine aim), barely at high speed (no flick lag)
+	auto alpha = [dt](double cutoff) { return 1.0 / (1.0 + 1.0 / (2.0 * MOUSELOOK_PI * cutoff * dt)); };
+	double dspeed = std::hypot(vx - smooth_vx, vy - smooth_vy) / dt / MOUSELOOK_FULL_SCALE;
+	smooth_dspeed += alpha(MOUSELOOK_FILTER_DCUTOFF) * (dspeed - smooth_dspeed);
+	double a = alpha(min_cutoff + MOUSELOOK_FILTER_BETA * smooth_dspeed);
+	smooth_vx += a * (vx - smooth_vx);
+	smooth_vy += a * (vy - smooth_vy);
 
 	double speed = std::hypot(smooth_vx, smooth_vy);
 	double out_x = 0.0, out_y = 0.0;
-	if(speed > 1.0)
+	// stop shortly after the mouse does, instead of letting the filter's tail drift the view
+	if(sum_dx != 0.0 || sum_dy != 0.0)
+		idle_time = 0.0;
+	else
+		idle_time += dt;
+	if(calibrating)
+	{
+		out_x = deadzone;
+	}
+	else if(idle_time < MOUSELOOK_STOP_S && speed > 1.0)
 	{
 		double mag = speed * sensitivity / MOUSELOOK_FULL_SCALE;
 		double shaped = std::min(1.0, std::pow(mag, (double)curve));
@@ -332,19 +352,11 @@ void MouseLook::Tick()
 		double out = deadzone + (1.0 - deadzone) * shaped;
 		out_x = smooth_vx / speed * out;
 		out_y = smooth_vy / speed * out;
-		last_out_x = out_x;
-		last_out_y = out_y;
-		hold_remaining = MOUSELOOK_HOLD_S;
 	}
 	else
 	{
 		smooth_vx = smooth_vy = 0.0;
-		if(hold_remaining > 0.0)
-		{
-			hold_remaining -= dt;
-			out_x = last_out_x;
-			out_y = last_out_y;
-		}
+		smooth_dspeed = 0.0;
 	}
 
 	int16_t right_x = (int16_t)std::lround(std::clamp(out_x, -1.0, 1.0) * 0x7fff);
@@ -384,12 +396,30 @@ void MouseLook::AdjustCurve(float delta)
 	ReportTuning();
 }
 
+void MouseLook::AdjustSmoothing(float factor)
+{
+	// lower min cutoff = more smoothing at low speed
+	min_cutoff = std::clamp(min_cutoff / factor, 0.5f, 30.0f);
+	settings->SetMouseLookMinCutoff(min_cutoff);
+	ReportTuning();
+}
+
+void MouseLook::SetCalibrating(bool calibrating)
+{
+	if(this->calibrating == calibrating)
+		return;
+	this->calibrating = calibrating;
+	ReportTuning();
+}
+
 void MouseLook::ReportTuning()
 {
-	QString text = QStringLiteral("Mouse look: sensitivity %1, deadzone %2, curve %3")
+	QString text = QStringLiteral("Mouse look: sensitivity %1, deadzone %2, curve %3, smoothing %4 Hz%5")
 		.arg(sensitivity, 0, 'f', 2)
 		.arg(deadzone, 0, 'f', 2)
-		.arg(curve, 0, 'f', 2);
+		.arg(curve, 0, 'f', 2)
+		.arg(min_cutoff, 0, 'f', 1)
+		.arg(calibrating ? QStringLiteral(" [CALIBRATING: lower deadzone until the view just stops]") : QString());
 	qCInfo(chiakiMouseLook).noquote() << text;
 	window->setTitle(text);
 }

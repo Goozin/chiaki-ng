@@ -7676,6 +7676,15 @@ bool QmlMainWindow::handleShortcut(QKeyEvent *event)
             if (session)
                 mouse_look->Toggle();
             return true;
+        case Qt::Key_F5:
+            mouse_look->AdjustSmoothing(1.0f / 1.25f);
+            return true;
+        case Qt::Key_F6:
+            mouse_look->AdjustSmoothing(1.25f);
+            return true;
+        case Qt::Key_F7:
+            mouse_look->SetCalibrating(true);
+            return true;
         case Qt::Key_F9:
             mouse_look->AdjustSensitivity(1.0f / 1.1f);
             return true;
@@ -7789,6 +7798,8 @@ bool QmlMainWindow::event(QEvent *event)
         if (handleShortcut(static_cast<QKeyEvent*>(event)))
             return true;
     case QEvent::KeyRelease:
+        if (static_cast<QKeyEvent*>(event)->key() == Qt::Key_F7 && !static_cast<QKeyEvent*>(event)->isAutoRepeat())
+            mouse_look->SetCalibrating(false);
         if (session && !grab_input) {
             QKeyEvent *e = static_cast<QKeyEvent*>(event);
             if (!e->spontaneous()) {
