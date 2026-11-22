@@ -40,6 +40,7 @@ Q_DECLARE_LOGGING_CATEGORY(chiakiGui);
 class Settings;
 class StreamSession;
 class QmlBackend;
+class MouseLook;
 class QOffscreenSurface;
 class QOpenGLContext;
 class QOpenGLFramebufferObject;
@@ -325,6 +326,7 @@ private:
     Settings *settings = {};
 
     QmlBackend *backend = {};
+    MouseLook *mouse_look = {};
     StreamSession *session = {};
     AVBufferRef *vulkan_hw_dev_ctx = nullptr;
     std::atomic<double> queue_depth_average{0.0};

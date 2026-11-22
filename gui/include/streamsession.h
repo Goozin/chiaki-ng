@@ -220,6 +220,8 @@ class StreamSession : public QObject
 		bool rumble_haptics_on;
 		float PS_TOUCHPAD_MAX_X, PS_TOUCHPAD_MAX_Y;
 		ChiakiControllerState keyboard_state;
+		ChiakiControllerState mouse_look_state;
+		uint32_t keyboard_stick_held;
 		ChiakiControllerState touch_state;
 		QMap<int, uint8_t> touch_tracker;
 		int8_t mouse_touch_id;
@@ -365,6 +367,7 @@ class StreamSession : public QObject
 #if CHIAKI_LIB_ENABLE_PI_DECODER
 		ChiakiPiDecoder *GetPiDecoder()	{ return pi_decoder; }
 #endif
+		void SetMouseLookState(const ChiakiControllerState &state);
 		void HandleKeyboardEvent(QKeyEvent *event);
 		void HandleTouchEvent(QTouchEvent *event, qreal width, qreal height);
 		void HandleDpadTouchEvent(ChiakiControllerState *state, bool placeholder = false);

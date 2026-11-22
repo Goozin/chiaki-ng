@@ -4,6 +4,7 @@
 #include "chiaki/log.h"
 #include "chiaki/time.h"
 #include "streamsession.h"
+#include "mouselook.h"
 
 #include <qpa/qplatformnativeinterface.h>
 
@@ -30,6 +31,7 @@ extern "C" {
 #include <QStandardPaths>
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QWheelEvent>
 #include <QFile>
 #include <QWidget>
 #include <QLabel>
@@ -2760,6 +2762,7 @@ void QmlMainWindow::grabInput()
     grab_input++;
     if (session)
         session->BlockInput(grab_input);
+    mouse_look->SetSuspended(true);
 }
 
 void QmlMainWindow::releaseInput()
@@ -2771,6 +2774,7 @@ void QmlMainWindow::releaseInput()
         setCursor(Qt::BlankCursor);
     if (session)
         session->BlockInput(grab_input);
+    mouse_look->SetSuspended(grab_input > 0);
 }
 
 void QmlMainWindow::requestOverlayUpdate()
@@ -5157,6 +5161,8 @@ renderer_backend_ready:
     connect(qml_engine, &QQmlEngine::quit, this, &QWindow::close);
 
     backend = new QmlBackend(settings, this);
+    mouse_look = new MouseLook(settings, this, this);
+    connect(this, &QWindow::activeChanged, this, [this]() { mouse_look->SetFocused(isActive()); });
     stats_overlay_widget = new StatsOverlayWidget(this, backend);
     connect(backend, &QmlBackend::sessionChanged, this, [this, exit_app_on_stream_exit](StreamSession *s) {
         const bool preserve_startup_warmup = s && startup_warmup_preserve_next_session_change;
@@ -5167,6 +5173,8 @@ renderer_backend_ready:
         grab_input = 0;
         if (session)
             session->BlockInput(0);
+        mouse_look->SetSuspended(false);
+        mouse_look->SetSession(s);
         // Only drain at session end (teardown): prevents frame_mix use-after-free.
         // At session start draining would visibly freeze the connecting UI, so the
         // queue reset below waits only for a render that is drawing queued frames.
@@ -7657,6 +7665,42 @@ bool QmlMainWindow::handleShortcut(QKeyEvent *event)
             else
                 normalTime();
             return true;
+        case Qt::Key_F8:
+            if (session)
+                mouse_look->Toggle();
+            return true;
+        case Qt::Key_F9:
+            mouse_look->AdjustSensitivity(1.0f / 1.1f);
+            return true;
+        case Qt::Key_F10:
+            mouse_look->AdjustSensitivity(1.1f);
+            return true;
+        default:
+            break;
+        }
+    }
+
+    if (event->modifiers() == Qt::ShiftModifier) {
+        switch (event->key()) {
+        case Qt::Key_F9:
+            mouse_look->AdjustDeadzone(-0.01f);
+            return true;
+        case Qt::Key_F10:
+            mouse_look->AdjustDeadzone(0.01f);
+            return true;
+        default:
+            break;
+        }
+    }
+
+    if (event->modifiers() == Qt::ControlModifier) {
+        switch (event->key()) {
+        case Qt::Key_F9:
+            mouse_look->AdjustCurve(-0.05f);
+            return true;
+        case Qt::Key_F10:
+            mouse_look->AdjustCurve(0.05f);
+            return true;
         default:
             break;
         }
@@ -7710,6 +7754,8 @@ bool QmlMainWindow::event(QEvent *event)
         if (static_cast<QMouseEvent*>(event)->source() != Qt::MouseEventNotSynthesized)
             return true;
         if (session && !grab_input) {
+            if (mouse_look->HandleMouseEvent(static_cast<QMouseEvent*>(event)))
+                return true;
             if (event->type() == QEvent::MouseMove)
                 session->HandleMouseMoveEvent(static_cast<QMouseEvent*>(event), width(), height());
             else if (event->type() == QEvent::MouseButtonPress)
@@ -7721,6 +7767,8 @@ bool QmlMainWindow::event(QEvent *event)
         QGuiApplication::sendEvent(quick_window, event);
         break;
     case QEvent::MouseButtonDblClick:
+        if (session && !grab_input && mouse_look->HandleMouseEvent(static_cast<QMouseEvent*>(event)))
+            return true;
         if(!settings->GetFullscreenDoubleClickEnabled())
             break;
         if (session && !grab_input) {
@@ -7745,6 +7793,10 @@ bool QmlMainWindow::event(QEvent *event)
             return true;
         }
         QGuiApplication::sendEvent(quick_window, event);
+        break;
+    case QEvent::Wheel:
+        if (session && !grab_input && mouse_look->HandleWheelEvent(static_cast<QWheelEvent*>(event)))
+            return true;
         break;
     case QEvent::TouchBegin:
     case QEvent::TouchUpdate:

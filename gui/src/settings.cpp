@@ -996,6 +996,51 @@ void Settings::SetMouseTouchEnabled(bool enabled)
 	settings.setValue("settings/mouse_touch_enabled", enabled);
 }
 
+bool Settings::GetMouseLookEnabled() const
+{
+	return settings.value("mouselook/enabled", true).toBool();
+}
+void Settings::SetMouseLookEnabled(bool enabled)
+{
+	settings.setValue("mouselook/enabled", enabled);
+}
+
+float Settings::GetMouseLookSensitivity() const
+{
+	return settings.value("mouselook/sensitivity", 1.0f).toFloat();
+}
+void Settings::SetMouseLookSensitivity(float sensitivity)
+{
+	settings.setValue("mouselook/sensitivity", sensitivity);
+}
+
+float Settings::GetMouseLookCurve() const
+{
+	return settings.value("mouselook/curve", 1.0f).toFloat();
+}
+void Settings::SetMouseLookCurve(float curve)
+{
+	settings.setValue("mouselook/curve", curve);
+}
+
+float Settings::GetMouseLookDeadzone() const
+{
+	return settings.value("mouselook/deadzone", 0.15f).toFloat();
+}
+void Settings::SetMouseLookDeadzone(float deadzone)
+{
+	settings.setValue("mouselook/deadzone", deadzone);
+}
+
+float Settings::GetMouseLookSmoothing() const
+{
+	return settings.value("mouselook/smoothing", 0.3f).toFloat();
+}
+void Settings::SetMouseLookSmoothing(float smoothing)
+{
+	settings.setValue("mouselook/smoothing", smoothing);
+}
+
 
 bool Settings::GetDpadTouchEnabled() const
 {

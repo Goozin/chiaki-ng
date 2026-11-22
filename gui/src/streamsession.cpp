@@ -513,6 +513,8 @@ StreamSession::StreamSession(const StreamSessionConnectInfo &connect_info, QObje
 	}
 
 	chiaki_controller_state_set_idle(&keyboard_state);
+	chiaki_controller_state_set_idle(&mouse_look_state);
+	keyboard_stick_held = 0;
 	chiaki_controller_state_set_idle(&touch_state);
 	touch_tracker=QMap<int, uint8_t>();
 	mouse_touch_id=-1;
@@ -945,6 +947,12 @@ void StreamSession::HandleMouseMoveEvent(QMouseEvent *event, qreal width, qreal 
 	SendFeedbackState();
 }
 
+void StreamSession::SetMouseLookState(const ChiakiControllerState &state)
+{
+	mouse_look_state = state;
+	SendFeedbackState();
+}
+
 void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
 {
 	if(!keyboard_controller_enabled)
@@ -967,29 +975,30 @@ void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
 			keyboard_state.r2_state = press_event ? 0xff : 0;
 			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_RIGHT_Y_UP):
-			keyboard_state.right_y = press_event ? -0x7fff : 0;
-			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_RIGHT_Y_DOWN):
-			keyboard_state.right_y = press_event ? 0x7fff : 0;
-			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_RIGHT_X_UP):
-			keyboard_state.right_x = press_event ? 0x7fff : 0;
-			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_RIGHT_X_DOWN):
-			keyboard_state.right_x = press_event ? -0x7fff : 0;
-			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_LEFT_Y_UP):
-			keyboard_state.left_y = press_event ? -0x7fff : 0;
-			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_LEFT_Y_DOWN):
-			keyboard_state.left_y = press_event ? 0x7fff : 0;
-			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_LEFT_X_UP):
-			keyboard_state.left_x = press_event ? 0x7fff : 0;
-			break;
 		case static_cast<int>(ControllerButtonExt::ANALOG_STICK_LEFT_X_DOWN):
-			keyboard_state.left_x = press_event ? -0x7fff : 0;
+		{
+			// track every held direction so releasing one key doesn't cancel the opposite one still held
+			if(press_event)
+				keyboard_stick_held |= button;
+			else
+				keyboard_stick_held &= ~button;
+			auto axis = [this](ControllerButtonExt positive, ControllerButtonExt negative) -> int16_t {
+				bool pos = keyboard_stick_held & static_cast<uint32_t>(positive);
+				bool neg = keyboard_stick_held & static_cast<uint32_t>(negative);
+				return pos == neg ? 0 : (pos ? 0x7fff : -0x7fff);
+			};
+			keyboard_state.left_x = axis(ControllerButtonExt::ANALOG_STICK_LEFT_X_UP, ControllerButtonExt::ANALOG_STICK_LEFT_X_DOWN);
+			keyboard_state.left_y = axis(ControllerButtonExt::ANALOG_STICK_LEFT_Y_DOWN, ControllerButtonExt::ANALOG_STICK_LEFT_Y_UP);
+			keyboard_state.right_x = axis(ControllerButtonExt::ANALOG_STICK_RIGHT_X_UP, ControllerButtonExt::ANALOG_STICK_RIGHT_X_DOWN);
+			keyboard_state.right_y = axis(ControllerButtonExt::ANALOG_STICK_RIGHT_Y_DOWN, ControllerButtonExt::ANALOG_STICK_RIGHT_Y_UP);
 			break;
+		}
 		default:
 			if(press_event)
 				keyboard_state.buttons |= button;
@@ -1284,6 +1293,7 @@ void StreamSession::DpadSendFeedbackState()
 	chiaki_controller_state_or(&state, &state, &sdeck_state);
 #endif
 	chiaki_controller_state_or(&state, &state, &keyboard_state);
+	chiaki_controller_state_or(&state, &state, &mouse_look_state);
 	chiaki_controller_state_or(&state, &state, &touch_state);
 
 	if(input_block)
@@ -1295,6 +1305,7 @@ void StreamSession::DpadSendFeedbackState()
 		{
 			chiaki_controller_state_set_idle(&state);
 			chiaki_controller_state_set_idle(&keyboard_state);
+			keyboard_stick_held = 0;
 		}
 	}
 	if((dpad_touch_shortcut1 || dpad_touch_shortcut2 || dpad_touch_shortcut3 || dpad_touch_shortcut4) && (!dpad_touch_shortcut1 || (state.buttons & dpad_touch_shortcut1)) && (!dpad_touch_shortcut2 || (state.buttons & dpad_touch_shortcut2)) && (!dpad_touch_shortcut3 || (state.buttons & dpad_touch_shortcut3)) && (!dpad_touch_shortcut4 || (state.buttons & dpad_touch_shortcut4)))
@@ -1340,6 +1351,7 @@ void StreamSession::SendFeedbackState()
 	chiaki_controller_state_or(&state, &state, &sdeck_state);
 #endif
 	chiaki_controller_state_or(&state, &state, &keyboard_state);
+	chiaki_controller_state_or(&state, &state, &mouse_look_state);
 	chiaki_controller_state_or(&state, &state, &touch_state);
 
 	if(input_block)
@@ -1351,6 +1363,7 @@ void StreamSession::SendFeedbackState()
 		{
 			chiaki_controller_state_set_idle(&state);
 			chiaki_controller_state_set_idle(&keyboard_state);
+			keyboard_stick_held = 0;
 		}
 	}
 	if((dpad_touch_shortcut1 || dpad_touch_shortcut2 || dpad_touch_shortcut3 || dpad_touch_shortcut4) && (!dpad_touch_shortcut1 || (state.buttons & dpad_touch_shortcut1)) && (!dpad_touch_shortcut2 || (state.buttons & dpad_touch_shortcut2)) && (!dpad_touch_shortcut3 || (state.buttons & dpad_touch_shortcut3)) && (!dpad_touch_shortcut4 || (state.buttons & dpad_touch_shortcut4)))

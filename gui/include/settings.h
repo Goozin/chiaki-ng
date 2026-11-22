@@ -443,6 +443,17 @@ class Settings : public QObject
 		bool GetMouseTouchEnabled() const;
 		void SetMouseTouchEnabled(bool enabled);
 
+		bool GetMouseLookEnabled() const;
+		void SetMouseLookEnabled(bool enabled);
+		float GetMouseLookSensitivity() const;
+		void SetMouseLookSensitivity(float sensitivity);
+		float GetMouseLookCurve() const;
+		void SetMouseLookCurve(float curve);
+		float GetMouseLookDeadzone() const;
+		void SetMouseLookDeadzone(float deadzone);
+		float GetMouseLookSmoothing() const;
+		void SetMouseLookSmoothing(float smoothing);
+
 		bool GetDpadTouchEnabled() const;
 		void SetDpadTouchEnabled(bool enabled);
 
