@@ -454,6 +454,24 @@ void MouseLook::AdjustSmoothing(float factor)
 	ReportTuning();
 }
 
+bool MouseLook::SetCapsLockLight(bool on)
+{
+#ifdef Q_OS_WIN
+	if(((GetKeyState(VK_CAPITAL) & 1) != 0) == on)
+		return false;
+	INPUT inputs[2] = {};
+	inputs[0].type = INPUT_KEYBOARD;
+	inputs[0].ki.wVk = VK_CAPITAL;
+	inputs[1].type = INPUT_KEYBOARD;
+	inputs[1].ki.wVk = VK_CAPITAL;
+	inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+	return SendInput(2, inputs, sizeof(INPUT)) == 2;
+#else
+	Q_UNUSED(on);
+	return false;
+#endif
+}
+
 bool MouseLook::Driving() const
 {
 	return session && session->GetDrivingMode();

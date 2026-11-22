@@ -327,6 +327,9 @@ private:
 
     QmlBackend *backend = {};
     MouseLook *mouse_look = {};
+    // Caps Lock presses we synthesized to keep its light in sync with driving mode
+    int ignore_caps_lock = 0;
+    void syncCapsLockLight(bool on);
     StreamSession *session = {};
     AVBufferRef *vulkan_hw_dev_ctx = nullptr;
     std::atomic<double> queue_depth_average{0.0};

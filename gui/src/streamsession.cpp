@@ -1023,6 +1023,14 @@ void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
 				keyboard_state.buttons |= button;
 			else
 				keyboard_state.buttons &= ~button;
+			// Triangle always gets you out of a vehicle, so leave driving mode with it;
+			// otherwise walking forward afterwards would hold R2 and fire
+			if(press_event && driving_mode && button == CHIAKI_CONTROLLER_BUTTON_PYRAMID)
+			{
+				driving_mode = false;
+				UpdateDrivingState();
+				emit DrivingModeExited();
+			}
 			break;
 	}
 

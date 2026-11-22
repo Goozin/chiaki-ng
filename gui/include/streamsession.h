@@ -389,6 +389,8 @@ class StreamSession : public QObject
 		void BlockInput(bool block) { input_block = block ? 1 : 2; SendFeedbackState(); }
 
 	signals:
+		// emitted when driving mode turns itself off (vehicle exit key pressed)
+		void DrivingModeExited();
 		void FfmpegFrameAvailable();
 		void RumbleHapticPushed(uint16_t strength);
 #if CHIAKI_GUI_ENABLE_STEAMDECK_NATIVE

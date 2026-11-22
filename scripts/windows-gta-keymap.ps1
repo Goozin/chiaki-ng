@@ -1,23 +1,25 @@
-# Applies a GTA-style keyboard layout to chiaki-ng's keyboard-as-controller mapping.
+# Applies a GTA 6 keyboard layout to chiaki-ng's keyboard-as-controller mapping.
 # Close chiaki-ng before running. Re-map anything in Settings > Keys afterwards.
-# Mouse buttons are handled by mouse look (LMB=R2, RMB=L2, MMB=R3, Back=L1, Forward=R1, wheel=D-Pad Up/Down).
+# Mouse buttons are handled by mouse look (LMB=R2, RMB=L2, MMB=R3, Back=L1, Forward=R1, wheel=D-Pad Up/Down;
+# in driving mode LMB=R1 drive-by fire, RMB=L1). Arrow keys are the D-pad (phone, radio, partner, minimap).
 #
 #   powershell -ExecutionPolicy Bypass -File scripts\windows-gta-keymap.ps1
 
 $path = 'HKCU:\Software\Chiaki\Chiaki\keymap'
 
 $map = [ordered]@{
+	# labels are GTA 6's Default control scheme: on foot / in vehicle
 	'left_stick_up'    = 'W'
 	'left_stick_left'  = 'A'
 	'left_stick_down'  = 'S'
 	'left_stick_right' = 'D'
-	'cross'            = 'Space'  # jump / confirm
-	'box'              = 'C'
-	'pyramid'          = 'F'      # enter vehicle
-	'moon'             = 'R'      # crouch / back
-	'l1'               = 'Tab'    # weapon wheel
-	'r1'               = 'Q'      # cover
-	'l3'               = 'Shift'  # sprint
+	'cross'            = 'Space'  # jump, climb / handbrake
+	'box'              = 'C'      # melee / melee from vehicle
+	'pyramid'          = 'F'      # interact, enter / exit vehicle (also leaves driving mode)
+	'moon'             = 'R'      # crouch (hold: rest) / headlights (hold: duck)
+	'l1'               = 'Tab'    # loadout / draw sidearm
+	'r1'               = 'Q'      # cover (hold: quick throw) / drive-by fire
+	'l3'               = 'Shift'  # sprint / horn, nitrous
 	'r3'               = 'V'      # look behind
 	'touchpad'         = 'M'      # map
 	'options'          = 'Esc'    # pause

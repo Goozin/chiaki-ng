@@ -2777,6 +2777,15 @@ void QmlMainWindow::releaseInput()
     mouse_look->SetSuspended(grab_input > 0);
 }
 
+void QmlMainWindow::syncCapsLockLight(bool on)
+{
+    if (!MouseLook::SetCapsLockLight(on))
+        return;
+    ignore_caps_lock++;
+    // don't swallow a real press later if the synthesized one never reached us
+    QTimer::singleShot(500, this, [this]() { ignore_caps_lock = 0; });
+}
+
 void QmlMainWindow::requestOverlayUpdate()
 {
     scheduleUpdate(true, UpdateRequestReason::Unknown);
@@ -5175,6 +5184,14 @@ renderer_backend_ready:
             session->BlockInput(0);
         mouse_look->SetSuspended(false);
         mouse_look->SetSession(s);
+        if (s) {
+            // driving mode starts off, so the Caps Lock light should too
+            syncCapsLockLight(false);
+            connect(s, &StreamSession::DrivingModeExited, this, [this]() {
+                syncCapsLockLight(false);
+                setTitle(tr("Driving mode: off (left vehicle)"));
+            });
+        }
         // Only drain at session end (teardown): prevents frame_mix use-after-free.
         // At session start draining would visibly freeze the connecting UI, so the
         // queue reset below waits only for a render that is drawing queued frames.
@@ -7659,6 +7676,10 @@ bool QmlMainWindow::handleShortcut(QKeyEvent *event)
 {
     // any modifier, so it still works while holding Shift to sprint
     if (event->key() == Qt::Key_CapsLock) {
+        if (ignore_caps_lock > 0) {
+            ignore_caps_lock--;
+            return true;
+        }
         if (session && !event->isAutoRepeat())
             setTitle(session->ToggleDrivingMode() ? tr("Driving mode: on (W/S = gas/brake)") : tr("Driving mode: off"));
         return true;

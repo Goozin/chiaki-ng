@@ -11,6 +11,8 @@ This fork adds a mouse-to-right-stick layer so you can aim/look with a mouse whi
 - **Caps Lock** toggles driving mode: while on, the left-stick up/down keys (W/S) also press
   R2/L2 (gas/brake) so you can drive PC-style. Turn it off on foot, or walking forward fires R2.
   In driving mode the mouse buttons switch to drive-by: left = R1, right = L1.
+  Pressing the vehicle exit key (Triangle, F) turns driving mode off automatically and the Caps
+  Lock light follows it.
   Driving mode has its own camera sensitivity (x0.60) and heavier smoothing (1.5 Hz); F9/F10 and
   F5/F6 tune those while driving mode is on.
 - Keyboard: run `scripts/windows-gta-keymap.ps1` (with chiaki-ng closed) for a WASD layout,

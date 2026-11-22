@@ -51,6 +51,9 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		// holds the stick at exactly the deadzone value so it can be matched to the game's
 		void SetCalibrating(bool calibrating);
 
+		// turns the keyboard's Caps Lock light on/off; returns true if a Caps Lock press was synthesized
+		static bool SetCapsLockLight(bool on);
+
 		bool nativeEventFilter(const QByteArray &event_type, void *message, qintptr *result) override;
 
 	private:
