@@ -2487,7 +2487,19 @@ QMap<int, Qt::Key> Settings::GetControllerMapping()
 	{
 		auto button_name = GetChiakiControllerButtonName(chiaki_button).replace(' ', '_').toLower();
 		if(settings.contains("keymap/" + button_name))
-			result[static_cast<int>(chiaki_button)] = QKeySequence(settings.value("keymap/" + button_name).toString())[0].key();
+		{
+			// modifier keys on their own don't reliably round-trip through QKeySequence
+			static const QMap<QString, Qt::Key> modifier_keys = {
+				{QStringLiteral("Shift"), Qt::Key_Shift},
+				{QStringLiteral("Ctrl"), Qt::Key_Control},
+				{QStringLiteral("Alt"), Qt::Key_Alt},
+			};
+			QString key_name = settings.value("keymap/" + button_name).toString();
+			if(modifier_keys.contains(key_name))
+				result[static_cast<int>(chiaki_button)] = modifier_keys[key_name];
+			else
+				result[static_cast<int>(chiaki_button)] = QKeySequence(key_name)[0].key();
+		}
 	}
 
 	return result;
