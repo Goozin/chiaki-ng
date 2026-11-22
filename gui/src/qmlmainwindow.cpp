@@ -7676,6 +7676,13 @@ bool QmlMainWindow::handleShortcut(QKeyEvent *event)
             if (session)
                 mouse_look->Toggle();
             return true;
+        // Shift+F10 is the Windows context menu shortcut, so deadzone gets its own keys
+        case Qt::Key_F3:
+            mouse_look->AdjustDeadzone(-0.01f);
+            return true;
+        case Qt::Key_F4:
+            mouse_look->AdjustDeadzone(0.01f);
+            return true;
         case Qt::Key_F5:
             mouse_look->AdjustSmoothing(1.0f / 1.25f);
             return true;

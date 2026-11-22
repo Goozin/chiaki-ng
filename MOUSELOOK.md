@@ -20,7 +20,7 @@ This fork adds a mouse-to-right-stick layer so you can aim/look with a mouse whi
 | --- | --- | --- |
 | F9 / F10 | sensitivity down / up (x1.1 steps) | 1.00 |
 | F9 / F10 while holding right mouse | aim sensitivity multiplier down / up | x1.50 |
-| Shift+F9 / Shift+F10 | deadzone compensation -/+ 0.01 | 0.15 |
+| F3 / F4 (or Shift+F9) | deadzone compensation -/+ 0.01 | 0.15 |
 | Ctrl+F9 / Ctrl+F10 | response curve -/+ 0.05 | 1.00 |
 | F5 / F6 | low-speed smoothing less / more | 2.5 Hz |
 | hold F7 | calibrate: holds the stick at exactly the deadzone value | |
@@ -31,7 +31,7 @@ Current values are shown in the window title (visible when windowed) and saved a
 - **Deadzone**: the smallest stick deflection sent for any movement, to get past the game's own
   stick deadzone. Too low and small movements do nothing; too high and the view drifts/jitters
   when you barely touch the mouse.
-- **Calibrating the deadzone**: stand still, hold F7, and tap Shift+F9 / Shift+F10 until the view
+- **Calibrating the deadzone**: stand still, hold F7, and tap F3 / F4 until the view
   *just barely* creeps. That's the game's deadzone, and where fine aiming is smoothest.
 - **Smoothing**: adaptive (One Euro filter) - strong at low speed for steady fine aim, almost none
   for fast flicks. F6 for steadier fine aim, F5 if slow movements feel laggy.
