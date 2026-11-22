@@ -8,6 +8,8 @@ This fork adds a mouse-to-right-stick layer so you can aim/look with a mouse whi
 - **F8** toggles it. While it's on the cursor is hidden and locked to the window; it's released
   automatically when the window loses focus or a chiaki menu opens.
 - Mouse buttons: left = R2, right = L2, middle = R3, back = L1, forward = R1, wheel = D-Pad Up/Down.
+- **Caps Lock** toggles driving mode: while on, the left-stick up/down keys (W/S) also press
+  R2/L2 (gas/brake) so you can drive PC-style. Turn it off on foot, or walking forward fires R2.
 - Keyboard: run `scripts/windows-gta-keymap.ps1` (with chiaki-ng closed) for a WASD layout,
   or set keys in Settings > Keys.
 

@@ -7669,6 +7669,10 @@ bool QmlMainWindow::handleShortcut(QKeyEvent *event)
             if (session)
                 mouse_look->Toggle();
             return true;
+        case Qt::Key_CapsLock:
+            if (session && !event->isAutoRepeat())
+                setTitle(session->ToggleDrivingMode() ? tr("Driving mode: on (W/S = gas/brake)") : tr("Driving mode: off"));
+            return true;
         case Qt::Key_F9:
             mouse_look->AdjustSensitivity(1.0f / 1.1f);
             return true;

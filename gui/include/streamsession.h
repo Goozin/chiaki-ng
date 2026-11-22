@@ -222,6 +222,9 @@ class StreamSession : public QObject
 		ChiakiControllerState keyboard_state;
 		ChiakiControllerState mouse_look_state;
 		uint32_t keyboard_stick_held;
+		// driving mode: left stick up/down keys also press R2/L2 (gas/brake)
+		bool driving_mode;
+		ChiakiControllerState driving_state;
 		ChiakiControllerState touch_state;
 		QMap<int, uint8_t> touch_tracker;
 		int8_t mouse_touch_id;
@@ -368,6 +371,7 @@ class StreamSession : public QObject
 		ChiakiPiDecoder *GetPiDecoder()	{ return pi_decoder; }
 #endif
 		void SetMouseLookState(const ChiakiControllerState &state);
+		bool ToggleDrivingMode();
 		void HandleKeyboardEvent(QKeyEvent *event);
 		void HandleTouchEvent(QTouchEvent *event, qreal width, qreal height);
 		void HandleDpadTouchEvent(ChiakiControllerState *state, bool placeholder = false);
@@ -407,6 +411,7 @@ class StreamSession : public QObject
 		void UpdateGamepads();
 		void DpadSendFeedbackState();
 		void SendFeedbackState();
+		void UpdateDrivingState();
 };
 
 Q_DECLARE_METATYPE(ChiakiQuitReason)

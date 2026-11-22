@@ -515,6 +515,8 @@ StreamSession::StreamSession(const StreamSessionConnectInfo &connect_info, QObje
 	chiaki_controller_state_set_idle(&keyboard_state);
 	chiaki_controller_state_set_idle(&mouse_look_state);
 	keyboard_stick_held = 0;
+	driving_mode = false;
+	chiaki_controller_state_set_idle(&driving_state);
 	chiaki_controller_state_set_idle(&touch_state);
 	touch_tracker=QMap<int, uint8_t>();
 	mouse_touch_id=-1;
@@ -953,6 +955,22 @@ void StreamSession::SetMouseLookState(const ChiakiControllerState &state)
 	SendFeedbackState();
 }
 
+bool StreamSession::ToggleDrivingMode()
+{
+	driving_mode = !driving_mode;
+	UpdateDrivingState();
+	SendFeedbackState();
+	return driving_mode;
+}
+
+void StreamSession::UpdateDrivingState()
+{
+	bool gas = driving_mode && (keyboard_stick_held & static_cast<uint32_t>(ControllerButtonExt::ANALOG_STICK_LEFT_Y_UP));
+	bool brake = driving_mode && (keyboard_stick_held & static_cast<uint32_t>(ControllerButtonExt::ANALOG_STICK_LEFT_Y_DOWN));
+	driving_state.r2_state = gas ? 0xff : 0;
+	driving_state.l2_state = brake ? 0xff : 0;
+}
+
 void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
 {
 	if(!keyboard_controller_enabled)
@@ -997,6 +1015,7 @@ void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
 			keyboard_state.left_y = axis(ControllerButtonExt::ANALOG_STICK_LEFT_Y_DOWN, ControllerButtonExt::ANALOG_STICK_LEFT_Y_UP);
 			keyboard_state.right_x = axis(ControllerButtonExt::ANALOG_STICK_RIGHT_X_UP, ControllerButtonExt::ANALOG_STICK_RIGHT_X_DOWN);
 			keyboard_state.right_y = axis(ControllerButtonExt::ANALOG_STICK_RIGHT_Y_DOWN, ControllerButtonExt::ANALOG_STICK_RIGHT_Y_UP);
+			UpdateDrivingState();
 			break;
 		}
 		default:
@@ -1294,6 +1313,7 @@ void StreamSession::DpadSendFeedbackState()
 #endif
 	chiaki_controller_state_or(&state, &state, &keyboard_state);
 	chiaki_controller_state_or(&state, &state, &mouse_look_state);
+	chiaki_controller_state_or(&state, &state, &driving_state);
 	chiaki_controller_state_or(&state, &state, &touch_state);
 
 	if(input_block)
@@ -1306,6 +1326,7 @@ void StreamSession::DpadSendFeedbackState()
 			chiaki_controller_state_set_idle(&state);
 			chiaki_controller_state_set_idle(&keyboard_state);
 			keyboard_stick_held = 0;
+			chiaki_controller_state_set_idle(&driving_state);
 		}
 	}
 	if((dpad_touch_shortcut1 || dpad_touch_shortcut2 || dpad_touch_shortcut3 || dpad_touch_shortcut4) && (!dpad_touch_shortcut1 || (state.buttons & dpad_touch_shortcut1)) && (!dpad_touch_shortcut2 || (state.buttons & dpad_touch_shortcut2)) && (!dpad_touch_shortcut3 || (state.buttons & dpad_touch_shortcut3)) && (!dpad_touch_shortcut4 || (state.buttons & dpad_touch_shortcut4)))
@@ -1352,6 +1373,7 @@ void StreamSession::SendFeedbackState()
 #endif
 	chiaki_controller_state_or(&state, &state, &keyboard_state);
 	chiaki_controller_state_or(&state, &state, &mouse_look_state);
+	chiaki_controller_state_or(&state, &state, &driving_state);
 	chiaki_controller_state_or(&state, &state, &touch_state);
 
 	if(input_block)
@@ -1364,6 +1386,7 @@ void StreamSession::SendFeedbackState()
 			chiaki_controller_state_set_idle(&state);
 			chiaki_controller_state_set_idle(&keyboard_state);
 			keyboard_stick_held = 0;
+			chiaki_controller_state_set_idle(&driving_state);
 		}
 	}
 	if((dpad_touch_shortcut1 || dpad_touch_shortcut2 || dpad_touch_shortcut3 || dpad_touch_shortcut4) && (!dpad_touch_shortcut1 || (state.buttons & dpad_touch_shortcut1)) && (!dpad_touch_shortcut2 || (state.buttons & dpad_touch_shortcut2)) && (!dpad_touch_shortcut3 || (state.buttons & dpad_touch_shortcut3)) && (!dpad_touch_shortcut4 || (state.buttons & dpad_touch_shortcut4)))
