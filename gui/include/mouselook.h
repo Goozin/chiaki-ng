@@ -62,6 +62,7 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		// target is a ChiakiControllerButton or CHIAKI_CONTROLLER_ANALOG_BUTTON_L2/R2
 		void SetTarget(uint32_t target, bool pressed);
 		void ReportTuning();
+		bool Driving() const;
 
 		Settings *settings;
 		QWindow *window;
@@ -77,6 +78,9 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		// multiplier on sensitivity while right mouse (aim) is held
 		float aim_sensitivity;
 		bool aiming = false;
+		// driving mode gets its own camera feel (vehicle cameras show jitter much more)
+		float drive_sensitivity;
+		float drive_min_cutoff;
 		// what left/right mouse are pressing, chosen at press time (driving mode swaps them)
 		uint32_t left_target = 0;
 		uint32_t right_target = 0;

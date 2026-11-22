@@ -1041,6 +1041,24 @@ void Settings::SetMouseLookAimSensitivity(float multiplier)
 	settings.setValue("mouselook/aim_sensitivity", multiplier);
 }
 
+float Settings::GetMouseLookDriveSensitivity() const
+{
+	return settings.value("mouselook/drive_sensitivity", 0.6f).toFloat();
+}
+void Settings::SetMouseLookDriveSensitivity(float multiplier)
+{
+	settings.setValue("mouselook/drive_sensitivity", multiplier);
+}
+
+float Settings::GetMouseLookDriveMinCutoff() const
+{
+	return settings.value("mouselook/drive_min_cutoff", 1.5f).toFloat();
+}
+void Settings::SetMouseLookDriveMinCutoff(float min_cutoff)
+{
+	settings.setValue("mouselook/drive_min_cutoff", min_cutoff);
+}
+
 float Settings::GetMouseLookMinCutoff() const
 {
 	return settings.value("mouselook/min_cutoff", 2.5f).toFloat();

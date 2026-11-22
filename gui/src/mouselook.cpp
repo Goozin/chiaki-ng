@@ -44,6 +44,8 @@ MouseLook::MouseLook(Settings *settings, QWindow *window, QObject *parent)
 {
 	sensitivity = settings->GetMouseLookSensitivity();
 	aim_sensitivity = settings->GetMouseLookAimSensitivity();
+	drive_sensitivity = settings->GetMouseLookDriveSensitivity();
+	drive_min_cutoff = settings->GetMouseLookDriveMinCutoff();
 	curve = settings->GetMouseLookCurve();
 	deadzone = settings->GetMouseLookDeadzone();
 	min_cutoff = settings->GetMouseLookMinCutoff();
@@ -354,7 +356,8 @@ void MouseLook::Tick()
 	auto alpha = [dt](double cutoff) { return 1.0 / (1.0 + 1.0 / (2.0 * MOUSELOOK_PI * cutoff * dt)); };
 	double dspeed = std::hypot(vx - smooth_vx, vy - smooth_vy) / dt / MOUSELOOK_FULL_SCALE;
 	smooth_dspeed += alpha(MOUSELOOK_FILTER_DCUTOFF) * (dspeed - smooth_dspeed);
-	double a = alpha(min_cutoff + MOUSELOOK_FILTER_BETA * smooth_dspeed);
+	bool driving = Driving();
+	double a = alpha((driving ? drive_min_cutoff : min_cutoff) + MOUSELOOK_FILTER_BETA * smooth_dspeed);
 	smooth_vx += a * (vx - smooth_vx);
 	smooth_vy += a * (vy - smooth_vy);
 
@@ -371,7 +374,7 @@ void MouseLook::Tick()
 	}
 	else if(idle_time < MOUSELOOK_STOP_S && speed > 1.0)
 	{
-		double mag = speed * sensitivity * (aiming ? aim_sensitivity : 1.0f) / MOUSELOOK_FULL_SCALE;
+		double mag = speed * sensitivity * (aiming ? aim_sensitivity : 1.0f) * (driving ? drive_sensitivity : 1.0f) / MOUSELOOK_FULL_SCALE;
 		double shaped = std::min(1.0, std::pow(mag, (double)curve));
 		// jump past the game's own stick deadzone so small movements register
 		double out = deadzone + (1.0 - deadzone) * shaped;
@@ -402,11 +405,16 @@ void MouseLook::SendState()
 
 void MouseLook::AdjustSensitivity(float factor)
 {
-	// while aiming, tune the aim multiplier instead
+	// while aiming or driving, tune that multiplier instead
 	if(aiming)
 	{
 		aim_sensitivity = std::clamp(aim_sensitivity * factor, 0.1f, 10.0f);
 		settings->SetMouseLookAimSensitivity(aim_sensitivity);
+	}
+	else if(Driving())
+	{
+		drive_sensitivity = std::clamp(drive_sensitivity * factor, 0.1f, 10.0f);
+		settings->SetMouseLookDriveSensitivity(drive_sensitivity);
 	}
 	else
 	{
@@ -433,9 +441,22 @@ void MouseLook::AdjustCurve(float delta)
 void MouseLook::AdjustSmoothing(float factor)
 {
 	// lower min cutoff = more smoothing at low speed
-	min_cutoff = std::clamp(min_cutoff / factor, 0.5f, 30.0f);
-	settings->SetMouseLookMinCutoff(min_cutoff);
+	if(Driving())
+	{
+		drive_min_cutoff = std::clamp(drive_min_cutoff / factor, 0.3f, 30.0f);
+		settings->SetMouseLookDriveMinCutoff(drive_min_cutoff);
+	}
+	else
+	{
+		min_cutoff = std::clamp(min_cutoff / factor, 0.5f, 30.0f);
+		settings->SetMouseLookMinCutoff(min_cutoff);
+	}
 	ReportTuning();
+}
+
+bool MouseLook::Driving() const
+{
+	return session && session->GetDrivingMode();
 }
 
 void MouseLook::SetCalibrating(bool calibrating)
@@ -448,13 +469,18 @@ void MouseLook::SetCalibrating(bool calibrating)
 
 void MouseLook::ReportTuning()
 {
-	QString text = QStringLiteral("Mouse look: sensitivity %1 (aim x%6), deadzone %2, curve %3, smoothing %4 Hz%5")
+	QString text = QStringLiteral("Mouse look: sensitivity %1 (aim x%2), deadzone %3, curve %4, smoothing %5 Hz")
 		.arg(sensitivity, 0, 'f', 2)
+		.arg(aim_sensitivity, 0, 'f', 2)
 		.arg(deadzone, 0, 'f', 2)
 		.arg(curve, 0, 'f', 2)
-		.arg(min_cutoff, 0, 'f', 1)
-		.arg(calibrating ? QStringLiteral(" [CALIBRATING: set deadzone to the lowest value where the camera still slowly turns]") : QString())
-		.arg(aim_sensitivity, 0, 'f', 2);
+		.arg(min_cutoff, 0, 'f', 1);
+	if(Driving())
+		text += QStringLiteral(" | DRIVING: sensitivity x%1, smoothing %2 Hz")
+			.arg(drive_sensitivity, 0, 'f', 2)
+			.arg(drive_min_cutoff, 0, 'f', 1);
+	if(calibrating)
+		text += QStringLiteral(" [CALIBRATING: set deadzone to the lowest value where the camera still slowly turns]");
 	qCInfo(chiakiMouseLook).noquote() << text;
 	window->setTitle(text);
 }
