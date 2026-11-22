@@ -43,6 +43,7 @@ MouseLook::MouseLook(Settings *settings, QWindow *window, QObject *parent)
 	window(window)
 {
 	sensitivity = settings->GetMouseLookSensitivity();
+	aim_sensitivity = settings->GetMouseLookAimSensitivity();
 	curve = settings->GetMouseLookCurve();
 	deadzone = settings->GetMouseLookDeadzone();
 	min_cutoff = settings->GetMouseLookMinCutoff();
@@ -132,6 +133,8 @@ void MouseLook::UpdateCapture()
 	smooth_dspeed = 0.0;
 	idle_time = 0.0;
 	chiaki_controller_state_set_idle(&state);
+	aiming = false;
+	left_target = right_target = 0;
 	wheel_buttons = 0;
 	wheel_release_timer->stop();
 
@@ -246,11 +249,23 @@ bool MouseLook::HandleMouseEvent(QMouseEvent *event)
 			bool pressed = event->type() != QEvent::MouseButtonRelease;
 			switch(event->button())
 			{
+				// in driving mode W/S are gas/brake, so the mouse does drive-by aim/shoot instead
 				case Qt::LeftButton:
-					state.r2_state = pressed ? 0xff : 0;
+					if(pressed)
+					{
+						SetTarget(left_target, false);
+						left_target = session && session->GetDrivingMode() ? CHIAKI_CONTROLLER_BUTTON_R1 : CHIAKI_CONTROLLER_ANALOG_BUTTON_R2;
+					}
+					SetTarget(left_target, pressed);
 					break;
 				case Qt::RightButton:
-					state.l2_state = pressed ? 0xff : 0;
+					if(pressed)
+					{
+						SetTarget(right_target, false);
+						right_target = session && session->GetDrivingMode() ? CHIAKI_CONTROLLER_BUTTON_L1 : CHIAKI_CONTROLLER_ANALOG_BUTTON_L2;
+					}
+					SetTarget(right_target, pressed);
+					aiming = pressed;
 					break;
 				case Qt::MiddleButton:
 					SetButton(CHIAKI_CONTROLLER_BUTTON_R3, pressed);
@@ -295,6 +310,16 @@ void MouseLook::SetButton(uint32_t button, bool pressed)
 		state.buttons |= button;
 	else
 		state.buttons &= ~button;
+}
+
+void MouseLook::SetTarget(uint32_t target, bool pressed)
+{
+	if(target == CHIAKI_CONTROLLER_ANALOG_BUTTON_R2)
+		state.r2_state = pressed ? 0xff : 0;
+	else if(target == CHIAKI_CONTROLLER_ANALOG_BUTTON_L2)
+		state.l2_state = pressed ? 0xff : 0;
+	else if(target)
+		SetButton(target, pressed);
 }
 
 void MouseLook::Tick()
@@ -346,7 +371,7 @@ void MouseLook::Tick()
 	}
 	else if(idle_time < MOUSELOOK_STOP_S && speed > 1.0)
 	{
-		double mag = speed * sensitivity / MOUSELOOK_FULL_SCALE;
+		double mag = speed * sensitivity * (aiming ? aim_sensitivity : 1.0f) / MOUSELOOK_FULL_SCALE;
 		double shaped = std::min(1.0, std::pow(mag, (double)curve));
 		// jump past the game's own stick deadzone so small movements register
 		double out = deadzone + (1.0 - deadzone) * shaped;
@@ -377,8 +402,17 @@ void MouseLook::SendState()
 
 void MouseLook::AdjustSensitivity(float factor)
 {
-	sensitivity = std::clamp(sensitivity * factor, 0.05f, 20.0f);
-	settings->SetMouseLookSensitivity(sensitivity);
+	// while aiming, tune the aim multiplier instead
+	if(aiming)
+	{
+		aim_sensitivity = std::clamp(aim_sensitivity * factor, 0.1f, 10.0f);
+		settings->SetMouseLookAimSensitivity(aim_sensitivity);
+	}
+	else
+	{
+		sensitivity = std::clamp(sensitivity * factor, 0.05f, 20.0f);
+		settings->SetMouseLookSensitivity(sensitivity);
+	}
 	ReportTuning();
 }
 
@@ -414,12 +448,13 @@ void MouseLook::SetCalibrating(bool calibrating)
 
 void MouseLook::ReportTuning()
 {
-	QString text = QStringLiteral("Mouse look: sensitivity %1, deadzone %2, curve %3, smoothing %4 Hz%5")
+	QString text = QStringLiteral("Mouse look: sensitivity %1 (aim x%6), deadzone %2, curve %3, smoothing %4 Hz%5")
 		.arg(sensitivity, 0, 'f', 2)
 		.arg(deadzone, 0, 'f', 2)
 		.arg(curve, 0, 'f', 2)
 		.arg(min_cutoff, 0, 'f', 1)
-		.arg(calibrating ? QStringLiteral(" [CALIBRATING: lower deadzone until the view just stops]") : QString());
+		.arg(calibrating ? QStringLiteral(" [CALIBRATING: lower deadzone until the view just stops]") : QString())
+		.arg(aim_sensitivity, 0, 'f', 2);
 	qCInfo(chiakiMouseLook).noquote() << text;
 	window->setTitle(text);
 }

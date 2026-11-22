@@ -1032,6 +1032,15 @@ void Settings::SetMouseLookDeadzone(float deadzone)
 	settings.setValue("mouselook/deadzone", deadzone);
 }
 
+float Settings::GetMouseLookAimSensitivity() const
+{
+	return settings.value("mouselook/aim_sensitivity", 1.5f).toFloat();
+}
+void Settings::SetMouseLookAimSensitivity(float multiplier)
+{
+	settings.setValue("mouselook/aim_sensitivity", multiplier);
+}
+
 float Settings::GetMouseLookMinCutoff() const
 {
 	return settings.value("mouselook/min_cutoff", 2.5f).toFloat();

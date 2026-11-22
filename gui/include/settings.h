@@ -451,6 +451,8 @@ class Settings : public QObject
 		void SetMouseLookCurve(float curve);
 		float GetMouseLookDeadzone() const;
 		void SetMouseLookDeadzone(float deadzone);
+		float GetMouseLookAimSensitivity() const;
+		void SetMouseLookAimSensitivity(float multiplier);
 		float GetMouseLookMinCutoff() const;
 		void SetMouseLookMinCutoff(float min_cutoff);
 

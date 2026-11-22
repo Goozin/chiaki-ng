@@ -372,6 +372,7 @@ class StreamSession : public QObject
 #endif
 		void SetMouseLookState(const ChiakiControllerState &state);
 		bool ToggleDrivingMode();
+		bool GetDrivingMode() const { return driving_mode; }
 		void HandleKeyboardEvent(QKeyEvent *event);
 		void HandleTouchEvent(QTouchEvent *event, qreal width, qreal height);
 		void HandleDpadTouchEvent(ChiakiControllerState *state, bool placeholder = false);

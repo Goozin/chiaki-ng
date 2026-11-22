@@ -10,6 +10,7 @@ This fork adds a mouse-to-right-stick layer so you can aim/look with a mouse whi
 - Mouse buttons: left = R2, right = L2, middle = R3, back = L1, forward = R1, wheel = D-Pad Up/Down.
 - **Caps Lock** toggles driving mode: while on, the left-stick up/down keys (W/S) also press
   R2/L2 (gas/brake) so you can drive PC-style. Turn it off on foot, or walking forward fires R2.
+  In driving mode the mouse buttons switch to drive-by: left = R1, right = L1.
 - Keyboard: run `scripts/windows-gta-keymap.ps1` (with chiaki-ng closed) for a WASD layout,
   or set keys in Settings > Keys.
 
@@ -18,6 +19,7 @@ This fork adds a mouse-to-right-stick layer so you can aim/look with a mouse whi
 | Keys | Adjusts | Default |
 | --- | --- | --- |
 | F9 / F10 | sensitivity down / up (x1.1 steps) | 1.00 |
+| F9 / F10 while holding right mouse | aim sensitivity multiplier down / up | x1.50 |
 | Shift+F9 / Shift+F10 | deadzone compensation -/+ 0.01 | 0.15 |
 | Ctrl+F9 / Ctrl+F10 | response curve -/+ 0.05 | 1.00 |
 | F5 / F6 | low-speed smoothing less / more | 2.5 Hz |

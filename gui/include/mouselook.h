@@ -59,6 +59,8 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		void Tick();
 		void SendState();
 		void SetButton(uint32_t button, bool pressed);
+		// target is a ChiakiControllerButton or CHIAKI_CONTROLLER_ANALOG_BUTTON_L2/R2
+		void SetTarget(uint32_t target, bool pressed);
 		void ReportTuning();
 
 		Settings *settings;
@@ -72,6 +74,12 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		bool raw_input_registered = false;
 
 		float sensitivity;
+		// multiplier on sensitivity while right mouse (aim) is held
+		float aim_sensitivity;
+		bool aiming = false;
+		// what left/right mouse are pressing, chosen at press time (driving mode swaps them)
+		uint32_t left_target = 0;
+		uint32_t right_target = 0;
 		float curve;
 		float deadzone;
 		float min_cutoff;
