@@ -453,7 +453,7 @@ void MouseLook::ReportTuning()
 		.arg(deadzone, 0, 'f', 2)
 		.arg(curve, 0, 'f', 2)
 		.arg(min_cutoff, 0, 'f', 1)
-		.arg(calibrating ? QStringLiteral(" [CALIBRATING: lower deadzone until the view just stops]") : QString())
+		.arg(calibrating ? QStringLiteral(" [CALIBRATING: set deadzone to the lowest value where the camera still slowly turns]") : QString())
 		.arg(aim_sensitivity, 0, 'f', 2);
 	qCInfo(chiakiMouseLook).noquote() << text;
 	window->setTitle(text);
