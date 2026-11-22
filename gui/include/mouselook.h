@@ -77,13 +77,17 @@ class MouseLook : public QObject, public QAbstractNativeEventFilter
 		double accum_x = 0.0;
 		double accum_y = 0.0;
 		// sliding window of recent ticks for velocity estimation
-		static constexpr int VELOCITY_WINDOW = 3;
+		static constexpr int VELOCITY_WINDOW = 2;
 		double window_dx[VELOCITY_WINDOW] = {};
 		double window_dy[VELOCITY_WINDOW] = {};
 		double window_dt[VELOCITY_WINDOW] = {};
 		int window_pos = 0;
 		double smooth_vx = 0.0;
 		double smooth_vy = 0.0;
+		// last deflection, held briefly after movement stops so the game samples short flicks
+		double last_out_x = 0.0;
+		double last_out_y = 0.0;
+		double hold_remaining = 0.0;
 
 		ChiakiControllerState state;
 		QTimer *tick_timer;

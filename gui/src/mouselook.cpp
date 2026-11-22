@@ -29,6 +29,8 @@ Q_LOGGING_CATEGORY(chiakiMouseLook, "chiaki.mouselook", QtInfoMsg);
 #define MOUSELOOK_FULL_SCALE 2500.0
 #define MOUSELOOK_WHEEL_PRESS_MS 60
 #define MOUSELOOK_CLIP_REFRESH_MS 500
+// roughly one game frame at 60 fps
+#define MOUSELOOK_HOLD_S 0.016
 
 MouseLook::MouseLook(Settings *settings, QWindow *window, QObject *parent)
 	: QObject(parent),
@@ -122,6 +124,8 @@ void MouseLook::UpdateCapture()
 	std::fill(std::begin(window_dy), std::end(window_dy), 0.0);
 	std::fill(std::begin(window_dt), std::end(window_dt), 0.0);
 	smooth_vx = smooth_vy = 0.0;
+	last_out_x = last_out_y = 0.0;
+	hold_remaining = 0.0;
 	chiaki_controller_state_set_idle(&state);
 	wheel_buttons = 0;
 	wheel_release_timer->stop();
@@ -328,10 +332,19 @@ void MouseLook::Tick()
 		double out = deadzone + (1.0 - deadzone) * shaped;
 		out_x = smooth_vx / speed * out;
 		out_y = smooth_vy / speed * out;
+		last_out_x = out_x;
+		last_out_y = out_y;
+		hold_remaining = MOUSELOOK_HOLD_S;
 	}
 	else
 	{
 		smooth_vx = smooth_vy = 0.0;
+		if(hold_remaining > 0.0)
+		{
+			hold_remaining -= dt;
+			out_x = last_out_x;
+			out_y = last_out_y;
+		}
 	}
 
 	int16_t right_x = (int16_t)std::lround(std::clamp(out_x, -1.0, 1.0) * 0x7fff);

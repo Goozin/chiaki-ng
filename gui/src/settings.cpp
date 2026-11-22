@@ -1034,7 +1034,7 @@ void Settings::SetMouseLookDeadzone(float deadzone)
 
 float Settings::GetMouseLookSmoothing() const
 {
-	return settings.value("mouselook/smoothing", 0.3f).toFloat();
+	return settings.value("mouselook/smoothing", 0.1f).toFloat();
 }
 void Settings::SetMouseLookSmoothing(float smoothing)
 {

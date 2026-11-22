@@ -29,7 +29,7 @@ Current values are shown in the window title (visible when windowed) and saved a
   when you barely touch the mouse.
 - **Curve**: below 1 makes slow movements stronger (snappier), above 1 gives finer control at low
   speed.
-- Smoothing (`mouselook/smoothing`, default 0.3) has no hotkey.
+- Smoothing (`mouselook/smoothing`, default 0.1) has no hotkey.
 
 ## How it works
 
